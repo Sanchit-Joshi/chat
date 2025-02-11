@@ -1,93 +1,127 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User } from '../types';
+import React, { createContext, useState, useContext, useEffect } from 'react';
+import axios from 'axios';
+
+interface User {
+    id: string;
+    username: string;
+    email: string;
+}
 
 interface AuthContextType {
-  user: User | null;
-  login: (username: string, password: string) => Promise<void>;
-  signup: (username: string, password: string) => Promise<void>;
-  logout: () => void;
-  isLoading: boolean;
+    user: User | null;
+    token: string | null;
+    isAuthenticated: boolean;
+    login: (email: string, password: string) => Promise<void>;
+    signup: (username: string, email: string, password: string) => Promise<void>;
+    logout: () => Promise<void>;
+    loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const [user, setUser] = useState<User | null>(null);
+    const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
+    const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // Check for stored auth token
-    const storedUser = localStorage.getItem('chatUser');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
-  }, []);
+    // Configure axios defaults
+    axios.defaults.baseURL = 'http://localhost:5000/api';
+    
+    // Set auth token header
+    useEffect(() => {
+        if (token) {
+            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        } else {
+            delete axios.defaults.headers.common['Authorization'];
+        }
+    }, [token]);
 
-  const login = async (username: string, password: string) => {
-    try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, password }),
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Login failed');
-      }
-      
-      const userData = await response.json();
-      setUser(userData);
-      localStorage.setItem('chatUser', JSON.stringify(userData));
-    } catch (error) {
-      console.error('Login error:', error);
-      throw error;
-    }
-  };
+    // Verify token and load user data
+    useEffect(() => {
+        const loadUser = async () => {
+            if (!token) {
+                setLoading(false);
+                return;
+            }
 
-  const signup = async (username: string, password: string) => {
-    try {
-      const response = await fetch('http://localhost:5000/api/auth/signup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, password }),
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Signup failed');
-      }
-      
-      const userData = await response.json();
-      setUser(userData);
-      localStorage.setItem('chatUser', JSON.stringify(userData));
-    } catch (error) {
-      console.error('Signup error:', error);
-      throw error;
-    }
-  };
+            try {
+                const response = await axios.get('/auth/current-user');
+                setUser(response.data);
+            } catch (error) {
+                localStorage.removeItem('token');
+                setToken(null);
+                setUser(null);
+            }
+            setLoading(false);
+        };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('chatUser');
-  };
+        loadUser();
+    }, [token]);
 
-  return (
-    <AuthContext.Provider value={{ user, login, signup, logout, isLoading }}>
-      {children}
-    </AuthContext.Provider>
-  );
-}
+    const login = async (email: string, password: string) => {
+        try {
+            const response = await axios.post('/auth/login', { email, password });
+            const { token: newToken, user: userData } = response.data;
+            
+            localStorage.setItem('token', newToken);
+            setToken(newToken);
+            setUser(userData);
+        } catch (error: any) {
+            throw new Error(error.response?.data?.message || 'Login failed');
+        }
+    };
+
+    const signup = async (username: string, email: string, password: string) => {
+        try {
+            const response = await axios.post('/auth/signup', {
+                username,
+                email,
+                password
+            });
+            
+            const { token: newToken, user: userData } = response.data;
+            
+            localStorage.setItem('token', newToken);
+            setToken(newToken);
+            setUser(userData);
+        } catch (error: any) {
+            throw new Error(error.response?.data?.message || 'Signup failed');
+        }
+    };
+
+    const logout = async () => {
+        try {
+            await axios.post('/auth/logout');
+        } catch (error) {
+            console.error('Logout error:', error);
+        } finally {
+            localStorage.removeItem('token');
+            setToken(null);
+            setUser(null);
+        }
+    };
+
+    return (
+        <AuthContext.Provider
+            value={{
+                user,
+                token,
+                isAuthenticated: !!user,
+                login,
+                signup,
+                logout,
+                loading
+            }}
+        >
+            {children}
+        </AuthContext.Provider>
+    );
+};
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+    const context = useContext(AuthContext);
+    if (context === undefined) {
+        throw new Error('useAuth must be used within an AuthProvider');
+    }
+    return context;
 };

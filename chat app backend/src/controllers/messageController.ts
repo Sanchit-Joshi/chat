@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import Message from '../models/Message';
+import {Message} from '../models/Message';
 
 export const sendMessage = async (req: Request, res: Response) => {
   const { sender, content } = req.body;

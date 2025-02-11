@@ -9,6 +9,8 @@
     "outDir": "./dist",             // Output the compiled files in 'dist' folder
     "rootDir": "./src",
     "allowImportingTsExtensions": true,
+    "typeRoots": ["./node_modules/@types", "./types"],
+    "types": ["node", "express"],
     
     /* Visit https://aka.ms/tsconfig to read more about this file */
 
