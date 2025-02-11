@@ -6,6 +6,8 @@ interface WebSocketContextType {
     sendMessage: (content: string, roomId: string) => void;
     messages: Message[];
     setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
+    onlineUsers: { id: string; username: string }[];
+    setOnlineUsers: React.Dispatch<React.SetStateAction<{ id: string; username: string }[]>>;
 }
 
 const WebSocketContext = createContext<WebSocketContextType | undefined>(undefined);
@@ -14,6 +16,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     const { user } = useAuth();
     const ws = useRef<WebSocket | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
+    const [onlineUsers, setOnlineUsers] = useState<{ id: string; username: string }[]>([]);
 
     useEffect(() => {
         if (user) {
@@ -21,11 +24,19 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
 
             ws.current.onopen = () => {
                 console.log('Connected to WebSocket');
+                // Join the room when the connection is established
+                ws.current?.send(JSON.stringify({ type: 'joinRoom', roomId: 'general', userId: user.id }));
             };
 
             ws.current.onmessage = (event) => {
-                const message: Message = JSON.parse(event.data);
-                setMessages((prev) => [...prev, message]);
+                const data = JSON.parse(event.data);
+                if (data.type === 'receiveMessage') {
+                    setMessages((prev) => [...prev, data.message]);
+                } else if (data.type === 'onlineUsers') {
+                    setOnlineUsers(data.users);
+                } else if (data.type === 'previousMessages') {
+                    setMessages(data.messages);
+                }
             };
 
             ws.current.onerror = (error) => {
@@ -41,6 +52,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     const sendMessage = (content: string, roomId: string) => {
         if (ws.current?.readyState === WebSocket.OPEN && user) {
             const message = {
+                type: 'sendMessage',
                 content,
                 roomId,
                 sender: user.id,
@@ -51,7 +63,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     };
 
     return (
-        <WebSocketContext.Provider value={{ sendMessage, messages, setMessages }}>
+        <WebSocketContext.Provider value={{ sendMessage, messages, setMessages, onlineUsers, setOnlineUsers }}>
             {children}
         </WebSocketContext.Provider>
     );

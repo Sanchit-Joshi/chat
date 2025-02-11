@@ -3,7 +3,7 @@ import mongoose, { Document } from 'mongoose';
 export interface IMessage extends Document {
     content: string;
     sender: mongoose.Types.ObjectId;
-    room: mongoose.Types.ObjectId;
+    room: string; // Change from ObjectId to String
     type: 'text' | 'image' | 'file';
     readBy: mongoose.Types.ObjectId[];
     createdAt: Date;
@@ -22,8 +22,7 @@ const messageSchema = new mongoose.Schema({
         required: true
     },
     room: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'ChatRoom',
+        type: String, // Change from ObjectId to String
         required: true
     },
     type: {
