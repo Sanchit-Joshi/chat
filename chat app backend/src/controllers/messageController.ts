@@ -13,10 +13,19 @@ export const sendMessage = async (req: Request, res: Response) => {
 };
 
 export const getMessages = async (req: Request, res: Response) => {
+  const { roomId } = req.params;
   try {
-    const messages = await Message.find().populate('sender', 'mobile');
-    res.json(messages);
+      const messages = await Message.find({ room: roomId }).populate('sender', 'username');
+      res.json(messages);
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+      res.status(500).json({ message: 'Server error' });
   }
 };
+// export const getMessages = async (req: Request, res: Response) => {
+//   try {
+//     const messages = await Message.find().populate('sender', 'mobile');
+//     res.json(messages);
+//   } catch (error) {
+//     res.status(500).json({ message: 'Server error' });
+//   }
+// };

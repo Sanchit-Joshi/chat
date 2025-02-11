@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useWebSocket } from '../context/WebSocketContext';
 import { useAuth } from '../context/AuthContext';
 import { Message } from '../types';
-import { Send, UserCircle2, Settings, LogOut, Users } from 'lucide-react';
+import { Send, UserCircle2, LogOut, Users } from 'lucide-react';
 
 interface ChatRoomProps {
   roomId: string;
@@ -19,40 +19,68 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
   const [newMessage, setNewMessage] = useState('');
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
   const [showUserList, setShowUserList] = useState(false);
-  const { sendMessage } = useWebSocket();
+  const [isTyping, setIsTyping] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { sendMessage, messages: wsMessages } = useWebSocket();
   const { user, logout } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Fetch messages when the room loads
   useEffect(() => {
     const fetchMessages = async () => {
       try {
         const response = await fetch(`http://localhost:5000/api/messages/${roomId}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch messages');
+        }
         const data = await response.json();
-        setMessages(data);
+        if (Array.isArray(data)) {
+          setMessages(data);
+        } else {
+          throw new Error('Invalid response format');
+        }
       } catch (error) {
         console.error('Error fetching messages:', error);
+        setError('Failed to load messages. Please try again later.');
+        setMessages([]);
       }
     };
 
     fetchMessages();
   }, [roomId]);
 
+  // Sync WebSocket messages with local state
   useEffect(() => {
-    // Simulated online users - replace with actual WebSocket data
-    setOnlineUsers([
-      { id: '1', username: 'Alice', lastSeen: new Date().toISOString() },
-      { id: '2', username: 'Bob', lastSeen: new Date().toISOString() },
-      { id: '3', username: 'Charlie', lastSeen: new Date().toISOString() },
-    ]);
-  }, []);
+    if (wsMessages.length > 0) {
+      setMessages((prev) => [...prev, ...wsMessages]);
+    }
+  }, [wsMessages]);
 
+  // Scroll to the bottom when new messages arrive
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
 
+  // Handle typing indicator
+  const handleTyping = () => {
+    if (!isTyping) {
+      setIsTyping(true);
+    }
+
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    typingTimeoutRef.current = setTimeout(() => {
+      setIsTyping(false);
+    }, 2000);
+  };
+
+  // Handle message submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (newMessage.trim() && user) {
@@ -61,6 +89,7 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
     }
   };
 
+  // Format timestamp for messages
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);
     const now = new Date();
@@ -75,13 +104,13 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
   };
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-screen bg-gray-100">
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col">
         {/* Chat Header */}
-        <div className="bg-white border-b px-4 py-3 flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <h2 className="text-lg font-semibold text-gray-800">Chat Room</h2>
+        <div className="bg-white border-b px-6 py-4 flex justify-between items-center shadow-sm">
+          <div className="flex items-center space-x-3">
+            <h2 className="text-xl font-semibold text-gray-800">Chat Room: {roomId}</h2>
             <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
               {onlineUsers.length} online
             </span>
@@ -95,7 +124,7 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
               <Users className="h-5 w-5" />
             </button>
             <button
-            title='logout'
+              title="Logout"
               onClick={logout}
               className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
             >
@@ -105,10 +134,15 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
         </div>
 
         {/* Messages Area */}
-        <div 
+        <div
           ref={chatContainerRef}
-          className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50"
+          className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50"
         >
+          {error && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+              {error}
+            </div>
+          )}
           {messages.map((message, index) => {
             const isCurrentUser = message.sender === user?.id;
             const showAvatar = index === 0 || messages[index - 1].sender !== message.sender;
@@ -154,18 +188,28 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
           <div ref={messagesEndRef} />
         </div>
 
+        {/* Typing Indicator */}
+        {isTyping && (
+          <div className="px-6 py-2 text-sm text-gray-500">
+            Someone is typing...
+          </div>
+        )}
+
         {/* Message Input */}
-        <div className="bg-white border-t p-4">
+        <div className="bg-white border-t p-4 shadow-lg">
           <form onSubmit={handleSubmit} className="flex space-x-4">
             <input
               type="text"
               value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
+              onChange={(e) => {
+                setNewMessage(e.target.value);
+                handleTyping();
+              }}
               placeholder="Type your message..."
               className="flex-1 px-4 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             <button
-            title='Send'
+              title="Send"
               type="submit"
               disabled={!newMessage.trim()}
               className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -178,7 +222,7 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
 
       {/* Online Users Sidebar */}
       {showUserList && (
-        <div className="w-64 border-l bg-white">
+        <div className="w-64 border-l bg-white shadow-lg">
           <div className="p-4 border-b">
             <h3 className="text-lg font-semibold text-gray-800">Online Users</h3>
           </div>

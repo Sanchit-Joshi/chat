@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import connectDB from './config/db.ts';
 import authRoutes from './routes/authRoutes.ts';
 import messageRoutes from './routes/messageRoutes.ts';
+import { Message } from './models/Message';
 // import mongoose from 'mongoose';
 
 
@@ -26,16 +27,32 @@ app.use('/api/auth', authRoutes);
 app.use('/api', messageRoutes);
 
 
-// WebSocket
+// WebSocket setup
 io.on('connection', (socket) => {
-  console.log('A user connected');
+  console.log('A user connected:', socket.id);
 
-  socket.on('sendMessage', (message) => {
-    socket.broadcast.emit('receiveMessage', message);
+  // Join a room
+  socket.on('joinRoom', async (roomId) => {
+      socket.join(roomId);
+      console.log(`User ${socket.id} joined room ${roomId}`);
+
+      // Fetch previous messages for the room
+      const messages = await Message.find({ room: roomId }).populate('sender', 'username');
+      socket.emit('previousMessages', messages);
   });
 
+  // Handle sending messages
+  socket.on('sendMessage', async ({ roomId, content, sender }) => {
+      const message = new Message({ content, sender, room: roomId });
+      await message.save();
+
+      // Broadcast the message to everyone in the room
+      io.to(roomId).emit('receiveMessage', message);
+  });
+
+  // Handle disconnection
   socket.on('disconnect', () => {
-    console.log('A user disconnected');
+      console.log('A user disconnected:', socket.id);
   });
 });
 
