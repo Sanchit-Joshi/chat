@@ -5,6 +5,7 @@ import { WebSocketProvider } from './context/WebSocketContext';
 import LoginPage from './components/LoginPage';
 import ChatRoom from './components/ChatRoom';
 import PrivateRoute from './components/PrivateRoute';
+// import { ChatInterface } from './components/ChatInterface';
 
 // Wrapper component to extract roomId from URL and pass it to ChatRoom
 const ChatRoomWrapper: React.FC = () => {
@@ -41,6 +42,7 @@ const App: React.FC = () => {
             <Route path="*" element={<Navigate to="/chat/general" replace />} />
           </Routes>
         </Router>
+        {/* <ChatInterface /> */}
       </WebSocketProvider>
     </AuthProvider>
   );

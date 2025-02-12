@@ -1,52 +1,46 @@
-import mongoose, { Document } from 'mongoose';
+import mongoose, { Document, Schema } from 'mongoose';
 
-export interface IMessage extends Document {
-    content: string;
-    sender: mongoose.Types.ObjectId;
-    room: string; // Change from ObjectId to String
-    type: 'text' | 'image' | 'file';
-    readBy: mongoose.Types.ObjectId[];
-    createdAt: Date;
-    updatedAt: Date;
+interface IMessage extends Document {
+  content: string;
+  sender: mongoose.Types.ObjectId;
+  room: string;
+  timestamp: Date;
 }
 
-const messageSchema = new mongoose.Schema({
-    content: {
-        type: String,
-        required: true,
-        trim: true
-    },
-    sender: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true
-    },
-    room: {
-        type: String, // Change from ObjectId to String
-        required: true
-    },
-    type: {
-        type: String,
-        enum: ['text', 'image', 'file'],
-        default: 'text'
-    },
-    readBy: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
-    }],
-    createdAt: {
-        type: Date,
-        default: Date.now
-    },
-    updatedAt: {
-        type: Date,
-        default: Date.now
-    }
+const MessageSchema: Schema = new Schema({
+  content: { 
+    type: String, 
+    required: [true, 'Message content is required'],
+    trim: true
+  },
+  sender: { 
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User', 
+    required: [true, 'Sender ID is required']
+  },
+  room: { 
+    type: String, 
+    required: [true, 'Room ID is required'],
+    trim: true 
+  },
+  timestamp: { 
+    type: Date, 
+    default: Date.now 
+  }
+}, {
+  timestamps: true
 });
 
-messageSchema.pre('save', function(next) {
-    this.updatedAt = new Date();
-    next();
+// Add a pre-save middleware to log the document before saving
+MessageSchema.pre('save', function(next) {
+  console.log('Attempting to save message:', {
+    content: this.content,
+    sender: this.sender,
+    room: this.room
+  });
+  next();
 });
 
-export const Message = mongoose.model<IMessage>('Message', messageSchema);
+const Message = mongoose.model<IMessage>('Message', MessageSchema);
+
+export { Message, IMessage };
