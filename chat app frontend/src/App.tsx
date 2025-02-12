@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'rea
 import { AuthProvider } from './context/AuthContext';
 import { WebSocketProvider } from './context/WebSocketContext';
 import LoginPage from './components/LoginPage';
+import { SignupPage } from './components/SignupPage';
 import ChatRoom from './components/ChatRoom';
 import PrivateRoute from './components/PrivateRoute';
 // import { ChatInterface } from './components/ChatInterface';
@@ -21,6 +22,7 @@ const App: React.FC = () => {
           <Routes>
             {/* Public Routes */}
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
 
             {/* Protected Routes */}
             <Route

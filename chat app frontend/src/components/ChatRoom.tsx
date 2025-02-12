@@ -16,7 +16,7 @@ interface Message {
   id: string;
   content: string;
   roomId: string;
-  sender: User;
+  sender: User | null;
   timestamp: string;
 }
 
@@ -65,26 +65,24 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
           id: msg.id,
           content: msg.content,
           roomId: msg.roomId,
-          sender: {
-            id: typeof msg.sender === 'string' ? msg.sender : msg.id,
-            username: typeof msg.sender === 'string' ? msg.sender : msg.sender.username
-          },
+          sender: msg.sender || null, // Ensure sender is not null
           timestamp: msg.timestamp
         }));
         return [...prev, ...formattedMessages];
       });
     }
   }, [wsMessages]);
-  
+
   const isUserNearBottom = () => {
     if (!chatContainerRef.current) return false;
     const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
     return scrollHeight - scrollTop <= clientHeight + 100; // Adjust the threshold as needed
   };
-  // Scroll to the bottom when new messages arrive
+
+  // Scroll to the bottom when new messages arrive if the user is near the bottom
   useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (isUserNearBottom() && chatContainerRef.current) {
+      chatContainerRef.current.scrollTop += 50; // Adjust the scroll amount as needed
     }
   }, [messages]);
 
@@ -154,8 +152,8 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
           )}
           <div className="flex flex-col space-y-4">
             {messages.map((message, index) => {
-              const isCurrentUser = message.sender.username === user?.username;
-              const showAvatar = index === 0 || messages[index - 1].sender.username !== message.sender.username;
+              const isCurrentUser = message.sender?.username === user?.username;
+              const showAvatar = index === 0 || messages[index - 1].sender?.username !== message.sender?.username;
 
               return (
                 <div
@@ -168,7 +166,7 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
                     </div>
                   )}
                   <div className={`flex flex-col ${isCurrentUser ? 'items-end' : 'items-start'}`}>
-                    {showAvatar && (
+                    {showAvatar && message.sender && (
                       <div className={`text-sm text-gray-500 mb-1 ${isCurrentUser ? 'text-right' : 'text-left'}`}>
                         {message.sender.username}
                       </div>

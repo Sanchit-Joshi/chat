@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Mail, User, Lock } from 'lucide-react';
+import { SignupPage } from './SignupPage';
 
 const LoginPage: React.FC = () => {
     const [isLogin, setIsLogin] = useState(true);
@@ -32,6 +33,8 @@ const LoginPage: React.FC = () => {
             if (isLogin) {
                 await login(formData.email, formData.password);
             } else {
+
+                
                 await signup(formData.username, formData.email, formData.password);
             }
             navigate('/chat'); // Redirect to chat room after successful auth
@@ -43,15 +46,16 @@ const LoginPage: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
-            
-            <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow">
-                
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-md w-full space-y-8">
                 <div>
-                    
-                    <h2 className="text-center text-3xl font-extrabold text-gray-900">
-                        {isLogin ? 'Sign in to your account' : 'Create new account'}
+                    <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                        Sign in to your account
                     </h2>
+                    <p className="mt-2 text-center text-sm text-gray-600">
+                        Or{' '}
+                        
+                    </p>
                 </div>
                 
                 {error && (
@@ -121,7 +125,13 @@ const LoginPage: React.FC = () => {
                             onClick={() => setIsLogin(!isLogin)}
                             className="text-indigo-600 hover:text-indigo-500"
                         >
-                            {isLogin ? 'Need an account? Sign up' : 'Already have an account? Sign in'}
+                            {/* {isLogin ? 'Need an account? Sign up' : 'Already have an account? Sign in'} */}
+                            <Link
+                            to="/signup"
+                            className="font-medium text-blue-600 hover:text-blue-500"
+                        >
+                            Need an account? Sign up
+                        </Link>
                         </button>
                     </div>
                 </form>
