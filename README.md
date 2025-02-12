@@ -5,7 +5,7 @@ This is a full-stack chat application built with Node.js, Express, MongoDB, and 
 ## Features
 
 - User authentication (signup, login, logout)
-- Real-time messaging with WebSockets
+- Real-time messaging with Sockets.io
 - Display online users
 - Secure password hashing
 - JWT-based authentication
@@ -71,8 +71,8 @@ npm start
 
 ### 5. Access the Application
 
-Open your browser and navigate to `http://localhost:3000` to access the chat application.
+Open your browser and navigate to `http://localhost:5173` to access the chat application.
 
-## License
+<!-- ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the MIT License. -->
