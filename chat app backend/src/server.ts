@@ -29,6 +29,9 @@ app.use(express.json());
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api', messageRoutes);
+app.get('/', (req, res) => {
+  res.send('hey there ');
+});
 
 // Track online users
 const onlineUsers = new Map<string, string>(); // Map<socket.id, userId>
