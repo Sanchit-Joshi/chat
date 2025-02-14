@@ -51,6 +51,11 @@ const userSchema = new mongoose.Schema({
     createdAt: {
         type: Date,
         default: Date.now
+    },
+    mobile: {
+        type: String,
+        unique: false, // Remove the unique constraint
+        sparse: true  // This allows multiple null values
     }
 });
 
