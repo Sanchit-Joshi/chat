@@ -32,7 +32,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     try {
       setConnectionStatus('connecting');
 
-      socket.current = io('http://localhost:5000', {
+      socket.current = io(`http://localhost:${process.env.REACT_APP_SOCKET_POR}`, {
         withCredentials: true,
         transports: ['websocket'],
         auth: {

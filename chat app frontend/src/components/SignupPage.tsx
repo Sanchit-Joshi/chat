@@ -24,7 +24,7 @@ export function SignupPage() {
     setError(null);
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/signup', {
+      const response = await fetch(`http://localhost:${import.meta.env.VITE_BACKEND_PORT}/api/auth/signup`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

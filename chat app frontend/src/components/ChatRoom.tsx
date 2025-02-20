@@ -42,7 +42,7 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
   useEffect(() => {
     const fetchMessages = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/messages/${roomId}`);
+        const response = await fetch(`http://localhost:${import.meta.env.VITE_BACKEND_PORT}/api/messages/${roomId}`);
         if (!response.ok) {
           throw new Error('Failed to fetch messages');
         }

@@ -18,7 +18,7 @@ export function EmailVerification({ onVerificationComplete }: EmailVerificationP
     setError(null);
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/send-otp', {
+      const response = await fetch(`http://localhost:${process.env.REACT_APP_API_PORT}/api/auth/send-otp`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -46,7 +46,7 @@ export function EmailVerification({ onVerificationComplete }: EmailVerificationP
     setError(null);
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/verify-otp', {
+      const response = await fetch(`http://localhost:${import.meta.env.VITE_BACKEND_PORT}/api/auth/verify-otp`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
