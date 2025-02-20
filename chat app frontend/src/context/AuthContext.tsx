@@ -25,8 +25,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [loading, setLoading] = useState(true);
 
     // Configure axios defaults
-    axios.defaults.baseURL = 'http://localhost:5000/api';
-    
+    // axios.defaults.baseURL = `http://localhost:${process.env.BACKEND_PORT}/api`;
+    axios.defaults.baseURL = `http://localhost:${import.meta.env.VITE_BACKEND_PORT}/api`;
+    console.log('axios.defaults.baseURL:', axios.defaults.baseURL);
     // Set auth token header
     useEffect(() => {
         if (token) {
